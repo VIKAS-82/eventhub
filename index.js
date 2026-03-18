@@ -1,3 +1,6 @@
+// index.js
+require('dotenv').config(); // Load environment variables
+
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -7,25 +10,31 @@ const session = require('express-session');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 
-// ======= DATABASE CONNECTION =======
-const db = mysql.createConnection({
+// ======= DATABASE CONNECTION (POOL) =======
+const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-db.connect((err) => {
+// Test DB connection
+db.getConnection((err, connection) => {
     if (err) {
         console.error('DB connection failed:', err);
     } else {
         console.log('Connected to MySQL!');
+        connection.release();
     }
 });
 
 // ======= MIDDLEWARE =======
 app.use(cors({
-    origin: process.env.FRONTEND_URL, // Netlify frontend URL
+    origin: process.env.FRONTEND_URL, // Frontend URL, e.g., Netlify
     credentials: true
 }));
 
@@ -53,6 +62,7 @@ app.get('/', (req, res) => {
 // Login POST
 app.post('/', async (req, res) => {
     const { email, password } = req.body;
+
     db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
         if (err) throw err;
         const user = results[0];
@@ -185,10 +195,6 @@ app.get('/mytickets', (req, res) => {
 app.get('/confirm', (req, res) => {
     res.render('confirm');
 });
-
-// ======= HOST ROUTES =======
-// Keep your host routes (host login, signup, create events) here
-// Use bcrypt for passwords same as user routes
 
 // ======= START SERVER =======
 const PORT = process.env.PORT || 8080;
