@@ -1,0 +1,9 @@
+express – Web framework
+
+mysql2 – MySQL client for Node.js
+
+ejs – For rendering HTML templates
+
+method-override – To support PUT/PATCH/DELETE via forms
+
+uuid
